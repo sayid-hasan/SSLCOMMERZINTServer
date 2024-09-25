@@ -46,7 +46,13 @@ async function run() {
     // DATABASE
     const payments = client.db("ssl").collection("payments");
 
+    // step 1--
+    // 1.1. Send a post  request to (https://sandbox.sslcommerz.com/gwprocess/v4/api.php) SSLCOMMERZ to initiate payment process and send data initial payment
+    //
+    // 1.2. After receiving response from SSLCOMMERZ, redirect customer to their payment gateway from response.data.GatewayPageURL/ send it on client side
+
     // create payment api route
+
     app.post("/create-payment", async (req, res) => {
       const payment_data = req?.body;
       const initialPayment = {
@@ -89,7 +95,7 @@ async function run() {
       // console.log("Payment data: ", payment_data);
       // console.log("initial payment: ", initialPayment);
       console.log("Response: ", response.data?.GatewayPageURL);
-      res.send({ paymentUrl: response.data?.GatewayPageURL });
+      res.send({ paymentURL: response.data.GatewayPageURL });
     });
     // SUCCESS PAYMENT URL
     app.post("/success-payment", (req, res) => {
