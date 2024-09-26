@@ -32,8 +32,7 @@ const generateTransactionId = () => {
     transactionId += chars.charAt(Math.floor(Math.random() * chars.length));
   }
 
-  const timestamp = Date.now();
-  return `TXN-${transactionId}-${timestamp}`;
+  return `TXN-${transactionId}`;
 };
 
 async function run() {
@@ -92,10 +91,19 @@ async function run() {
         },
         data: initialPayment,
       });
+      const saveData = {
+        cus_name: initialPayment.cus_name,
+        payment_id: initialPayment.tran_id,
+        payment: initialPayment?.total_amount,
+        status: "pending",
+      };
+      const save = await payments.insertOne(saveData);
+      if (save) {
+        console.log("Response: ", response.data?.GatewayPageURL);
+        res.send({ paymentURL: response.data?.GatewayPageURL });
+      }
       // console.log("Payment data: ", payment_data);
       // console.log("initial payment: ", initialPayment);
-      console.log("Response: ", response.data?.GatewayPageURL);
-      res.send({ paymentURL: response.data.GatewayPageURL });
     });
     // SUCCESS PAYMENT URL
     app.post("/success-payment", (req, res) => {
