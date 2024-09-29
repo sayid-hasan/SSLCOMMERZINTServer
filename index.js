@@ -49,6 +49,11 @@ async function run() {
     // 1.1. Send a post  request to (https://sandbox.sslcommerz.com/gwprocess/v4/api.php) SSLCOMMERZ to initiate payment process and send data initial payment
     //
     // 1.2. After receiving response from SSLCOMMERZ, redirect customer to their payment gateway from response.data.GatewayPageURL/ send it on client side
+    //
+    // step 2--
+    // 2.1. save customer details to your database and make status as pending in your database
+    //
+    // 2.2. after customer payment completed successfully, customer will be redirected to success_url. then update status as success in your database
 
     // create payment api route
 
@@ -63,8 +68,8 @@ async function run() {
         currency: payment_data?.currency,
         tran_id: generateTransactionId(), // use unique tran_id for each api call
         success_url: "http://localhost:5000/success-payment",
-        fail_url: "http://localhost:3030/fail",
-        cancel_url: "http://localhost:3030/cancel",
+        fail_url: "http://localhost:5000/failed-Payment",
+        cancel_url: "http://localhost:5000/cancel-Payment",
         ipn_url: "http://localhost:3030/ipn",
 
         product_name: "Computer.",
@@ -95,6 +100,7 @@ async function run() {
         cus_name: initialPayment.cus_name,
         payment_id: initialPayment.tran_id,
         payment: initialPayment?.total_amount,
+        currency: initialPayment?.currency,
         status: "pending",
       };
       const save = await payments.insertOne(saveData);
@@ -106,9 +112,33 @@ async function run() {
       // console.log("initial payment: ", initialPayment);
     });
     // SUCCESS PAYMENT URL
-    app.post("/success-payment", (req, res) => {
+    app.post("/success-payment", async (req, res) => {
       const success_data = req?.body;
-      console.log("Success data: ", success_data);
+      // console.log("Success data: ", success_data);
+      // Throw an error if the transaction status is not valid
+      if (success_data.status !== "VALID") {
+        throw new Error("Invalid transaction . unauthorised transaction");
+      }
+      // update payment status in database by filtering based on trx_id
+      const query = { payment_id: success_data.tran_id };
+      const updateData = { $set: { status: "success" } };
+      const update = await payments.updateOne(query, updateData);
+      console.log("suuccess Data", success_data);
+      console.log("update data", update);
+      if (update.modifiedCount > 0) {
+        console.log("Payment successful!");
+      } else {
+        console.log("Payment failed!");
+      }
+      res.redirect("http://localhost:5173/successPayment");
+    });
+    // will be called after the transaction is failed
+    app.post("/failed-Payment", async (req, res) => {
+      res.redirect("http://localhost:5173/failedPayment");
+    });
+    // will be called after the transaction is cancelled by customer
+    app.post("/cancel-Payment", async (req, res) => {
+      res.redirect("http://localhost:5173/cancelPayment");
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
