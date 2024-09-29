@@ -134,10 +134,19 @@ async function run() {
     });
     // will be called after the transaction is failed
     app.post("/failed-Payment", async (req, res) => {
+      const success_data = req?.body;
+      const query = { payment_id: success_data.tran_id };
+      const updateData = { $set: { status: "failed" } };
+      const update = await payments.updateOne(query, updateData);
+
       res.redirect("http://localhost:5173/failedPayment");
     });
     // will be called after the transaction is cancelled by customer
     app.post("/cancel-Payment", async (req, res) => {
+      const success_data = req?.body;
+      const query = { payment_id: success_data.tran_id };
+      const updateData = { $set: { status: "canceled" } };
+      const update = await payments.updateOne(query, updateData);
       res.redirect("http://localhost:5173/cancelPayment");
     });
     console.log(
